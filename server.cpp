@@ -3,6 +3,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <mutex>
+#include <condition_variable>
 #include <list>
 #include <string>
 #include <memory>
@@ -76,6 +77,7 @@ class DBPool {
 private:
     vector<PGconn*> connections;
     mutex mtx;
+    condition_variable cv;
     string conn_info;
     size_t pool_size;
 
@@ -109,8 +111,8 @@ public:
     }
 
     PGconn* getConnection() {
-        lock_guard<mutex> lock(mtx);
-        if (connections.empty()) return nullptr;
+        unique_lock<mutex> lock(mtx);
+        cv.wait(lock, [&]{ return !connections.empty(); });
         PGconn* conn = connections.back();
         connections.pop_back();
         return conn;
@@ -119,6 +121,7 @@ public:
     void releaseConnection(PGconn* conn) {
         lock_guard<mutex> lock(mtx);
         connections.push_back(conn);
+        cv.notify_one();    
     }
 };
 
