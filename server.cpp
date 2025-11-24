@@ -130,12 +130,12 @@ int main() {
 
     string db_conn = "host=localhost port=5432 dbname=decs user=postgres password=postgres";
     
-    auto db_pool = make_shared<DBPool>(db_conn, 20);
+    auto db_pool = make_shared<DBPool>(db_conn, 500);
     LRUCache cache(1000); 
 
     httplib::Server srv;
-
-    srv.new_task_queue = [] { return new httplib::ThreadPool(8); };
+    
+    srv.new_task_queue = [] { return new httplib::ThreadPool(500); };
 
     // create / update
     srv.Post("/create", [&](const httplib::Request& req, httplib::Response& res) {
@@ -271,8 +271,8 @@ int main() {
         }
     });
 
-    cout << "Server starting on http://localhost:8000" << endl;
-    srv.listen("0.0.0.0", 8000);
+    cout << "Server starting on http://localhost:8080" << endl;
+    srv.listen("0.0.0.0", 8080);
 
     return 0;
 }
